@@ -4,15 +4,19 @@ import base64
 import random
 import time
 import os
+from pinecone import Pinecone
 
+
+def s3_file_path(bucket, key):
+  return f"s3://{bucket}/{key}"
 
 def describe_image(s3, bedrock, bucket, key):
 
   
   # Get the image bytes from S3
-  s3_file_path = f"s3://{bucket}/{key}"
-  print(f"New file uploaded: {s3_file_path}")
-  print(f"Getting image bytes from S3: {s3_file_path}")
+  _s3_file_path = s3_file_path(bucket, key)
+  print(f"New file uploaded: {_s3_file_path}")
+  print(f"Getting image bytes from S3: {_s3_file_path}")
   response = s3.get_object(Bucket=bucket, Key=key)
   image_bytes = response["Body"].read()
   image_base64 = base64.b64encode(image_bytes).decode("utf-8")
@@ -60,10 +64,8 @@ def describe_image(s3, bedrock, bucket, key):
   response_body = json.loads(response["body"].read())
   image_descriptions = response_body["content"][0]["text"]
   
-  # if isinstance(image_description, list):
-  #     image_description = image_description.join("\n")
   
-  return image_descriptions
+  return image_descriptions if isinstance(image_descriptions, list) else [image_descriptions]
 
 def get_embeddings(bedrock, texts, input_type):
   
@@ -95,12 +97,26 @@ def get_embeddings(bedrock, texts, input_type):
   # Return the embedding (single item from list)
   return response_body
 
+def upsert_embeddings(vector_db, s3_file_path, embeddings, texts):
+  vectors = [(
+      f"{s3_file_path}-{index}", 
+      embedding,
+      {
+        'text': texts[index],
+        's3_file_path': s3_file_path
+      }
+    ) for index, embedding in enumerate(embeddings['embeddings']['float'])]
+  
+  vector_db.upsert(vectors)
+
 def main(event, context):
   
   s3 = boto3.client("s3")
   bedrock = boto3.client("bedrock-runtime", region_name="us-east-1")
+  
+  pc = Pinecone(api_key=os.environ['PINECONE_KEY'])
+  vector_db = pc.Index(os.environ['PINECONE_INDEX'])
 
-  print(os.environ['PINECONE_HOST'])
   print("S3 Event Received:", event)
   
   for record in event["Records"]:
@@ -110,6 +126,12 @@ def main(event, context):
       print(image_descriptions)
       image_description_embeddings = get_embeddings(bedrock=bedrock, texts=image_descriptions, input_type="search_document")
       print(image_description_embeddings)
+      upsert_embeddings(
+        vector_db=vector_db,
+        s3_file_path=s3_file_path(bucket, key),
+        embeddings=image_description_embeddings,
+        texts=image_descriptions
+      )
       
 
 
