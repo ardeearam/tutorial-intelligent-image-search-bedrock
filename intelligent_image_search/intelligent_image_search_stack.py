@@ -27,6 +27,7 @@ class IntelligentImageSearchStack(Stack):
           runtime=_lambda.Runtime.PYTHON_3_11,
           handler="handler.main",
           code=_lambda.Code.from_asset("lambda"),
+          timeout=Duration.seconds(900)
         )
         
         my_lambda.role.add_managed_policy(
