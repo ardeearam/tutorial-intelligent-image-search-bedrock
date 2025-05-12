@@ -5,6 +5,7 @@ from aws_cdk import (
     aws_s3 as s3,
     aws_s3_notifications as s3n,
     aws_lambda as _lambda,
+    aws_iam as iam,
 )
 from constructs import Construct
 
@@ -26,6 +27,10 @@ class IntelligentImageSearchStack(Stack):
           runtime=_lambda.Runtime.PYTHON_3_11,
           handler="handler.main",
           code=_lambda.Code.from_asset("lambda"),
+        )
+        
+        my_lambda.role.add_managed_policy(
+          iam.ManagedPolicy.from_aws_managed_policy_name("AmazonBedrockFullAccess")
         )
         
         bucket = s3.Bucket(
