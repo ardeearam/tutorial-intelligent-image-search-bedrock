@@ -8,26 +8,22 @@ from aws_cdk import (
     aws_iam as iam,
 )
 from constructs import Construct
+from dotenv import dotenv_values
 
 class IntelligentImageSearchStack(Stack):
 
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
-
-        # The code that defines your stack goes here
-
-        # example resource
-        queue = sqs.Queue(
-            self, "IntelligentImageSearchQueue",
-            visibility_timeout=Duration.seconds(300),
-        )
+        
+        env_vars = dotenv_values(".env") 
         
         my_lambda = _lambda.Function(
           self, "OnUploadLambdaFunction",
           runtime=_lambda.Runtime.PYTHON_3_11,
           handler="handler.main",
           code=_lambda.Code.from_asset("lambda"),
-          timeout=Duration.seconds(900)
+          timeout=Duration.seconds(900),  #IMPORTANT
+          environment=env_vars 
         )
         
         my_lambda.role.add_managed_policy(

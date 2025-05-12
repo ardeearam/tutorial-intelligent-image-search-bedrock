@@ -3,6 +3,7 @@ import json
 import base64
 import random
 import time
+import os
 
 
 def describe_image(s3, bedrock, bucket, key):
@@ -99,6 +100,7 @@ def main(event, context):
   s3 = boto3.client("s3")
   bedrock = boto3.client("bedrock-runtime", region_name="us-east-1")
 
+  print(os.environ['PINECONE_HOST'])
   print("S3 Event Received:", event)
   
   for record in event["Records"]:
