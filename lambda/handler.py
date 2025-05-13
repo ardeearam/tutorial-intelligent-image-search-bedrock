@@ -5,6 +5,9 @@ import random
 import time
 import os
 from pinecone import Pinecone
+import redis
+import pg8000
+
 
 
 def s3_file_path(bucket, key):
@@ -108,6 +111,42 @@ def upsert_embeddings(vector_db, s3_file_path, embeddings, texts):
     ) for index, embedding in enumerate(embeddings['embeddings']['float'])]
   
   vector_db.upsert(vectors)
+  
+def insert_to_db(s3_file_path, description):
+  
+  DATABASE_USER=os.environ['DATABASE_USER']
+  DATABASE_PASSWORD=os.environ['DATABASE_PASSWORD']
+  DATABASE_HOST=os.environ['DATABASE_HOST']
+  DATABASE_NAME=os.environ['DATABASE_NAME']
+  
+    
+  conn = pg8000.connect(
+      user=DATABASE_USER,
+      password=DATABASE_PASSWORD,
+      host=DATABASE_HOST,
+      database=DATABASE_NAME
+  )
+  
+  cursor = conn.cursor()
+
+
+  data = (s3_file_path, description)
+  cursor.execute(
+    """
+    INSERT INTO app_image(s3_file_path, description) 
+    VALUES(%s, %s)
+    ON CONFLICT(s3_file_path) 
+    DO UPDATE SET description = excluded.description
+    """, 
+    data
+  )
+  
+  conn.commit()
+  
+  # Clean up
+  cursor.close()
+  conn.close()
+      
 
 def main(event, context):
   
@@ -123,9 +162,18 @@ def main(event, context):
       bucket = record["s3"]["bucket"]["name"]
       key = record["s3"]["object"]["key"]      
       image_descriptions = describe_image(s3=s3, bedrock=bedrock, bucket=bucket, key=key)
+      
       print(image_descriptions)
+      
+      insert_to_db(
+        s3_file_path=s3_file_path(bucket, key),
+        description= "\n".join(image_descriptions)
+      )
+      
       image_description_embeddings = get_embeddings(bedrock=bedrock, texts=image_descriptions, input_type="search_document")
+      
       print(image_description_embeddings)
+      
       upsert_embeddings(
         vector_db=vector_db,
         s3_file_path=s3_file_path(bucket, key),

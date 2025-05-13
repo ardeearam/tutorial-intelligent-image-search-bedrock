@@ -25,6 +25,8 @@ MarkupSafe==3.0.2
 pinecone-client==6.0.0
 pinecone-plugin-interface==0.0.7
 placebo==0.9.0
+psycopg==3.2.9
+psycopg-binary==3.2.9
 publication==0.0.3
 python-dateutil==2.9.0.post0
 python-dotenv==1.1.0
