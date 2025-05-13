@@ -1,0 +1,12 @@
+{% load custom_filters %}
+
+<input type="text" />
+
+    <div style="display: flex;">
+        {% for image in images %}
+            <div>
+                <img src="{{ presigned_urls|get_item:image.s3_file_path }}"" width="300" alt="{{image.description}}" title="{{image.description}}"/>
+                <div>{{image.description}}</div>
+            </div>
+        {% endfor %}
+    </div>
