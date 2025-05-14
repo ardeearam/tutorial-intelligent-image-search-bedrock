@@ -28,14 +28,43 @@
           <div class="card-body">
             <h4 class="card-title">Search for images</h4>
             <p class="card-text">
-              <div class="row mt-2 mb-2">
-                <div class="col-11">
-                  <input type="text" class="form-control" />
+              <form method="POST">
+                {% csrf_token %}
+                <div class="row mt-2 mb-2">
+
+                    <div class="col-11">
+                      <input type="text" name="q" class="form-control" />
+                    </div>
+                    <div class="col">
+                      <input type="submit" value="Search" class="btn btn-secondary" />
+                    </div>
+
                 </div>
-                <div class="col">
-                  <input type="submit" value="Search" class="btn btn-secondary" />
+              </form>
+            </p>
+          </div>
+        </div>
+     </div>
+
+      <div class="container">
+        <div class="card text-white bg-primary mt-3 mb-3">
+          <div class="card-body">
+            <h4 class="card-title">Upload your own image (PNG format only, not less than 5MB)</h4>
+            <p class="card-text">
+              <form method="POST" action="{{ upload_url }}" enctype="multipart/form-data" id="upload-form">
+                {% csrf_token %}
+
+                <div class="row mt-2 mb-2">
+
+                    <div class="col-11">
+                      <input type="file" id="file-input" name="file" class="form-control"  accept="image/png" />
+                    </div>
+                    <div class="col">
+                      <input type="submit" value="Upload" class="btn btn-secondary" />
+                    </div>
+
                 </div>
-              </div>
+              </form>
             </p>
           </div>
         </div>
@@ -68,5 +97,32 @@
         });
       });
     </script>
+
+    <script>
+      document.getElementById("upload-form").addEventListener("submit", async (e) => {
+
+        e.preventDefault();
+
+        const fileInput = document.getElementById("file-input");
+        const file = fileInput.files[0];
+
+        if (!file) return alert("Choose a file first");
+
+
+        const upload = await fetch("{{presigned_upload_url}}", {
+          method: "PUT",
+          headers: {
+            "Content-Type": 'image/png',
+          },
+          body: file,
+        });
+
+        if (upload.ok) {
+          alert("Upload successful!");
+        } else {
+          alert("Upload failed.");
+        }
+      });
+      </script>
     </body>
   </html>

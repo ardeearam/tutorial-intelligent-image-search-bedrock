@@ -21,6 +21,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 ENV = environ.Env(DEBUG=(bool, False))
 environ.Env.read_env(os.path.join(BASE_DIR, '.env')) 
 
+PINECONE_KEY = ENV('PINECONE_KEY')
+PINECONE_INDEX = ENV('PINECONE_INDEX')
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
