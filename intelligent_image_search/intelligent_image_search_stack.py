@@ -35,6 +35,19 @@ class IntelligentImageSearchStack(Stack):
             "IntelligentImageSearchBucket",
             versioned=True,
             bucket_name="intelligent-image-search-bucket.klaudsol.com",
+            cors=[
+                s3.CorsRule(
+                    allowed_methods=[
+                        s3.HttpMethods.GET,
+                        s3.HttpMethods.PUT,
+                        s3.HttpMethods.POST,
+                        s3.HttpMethods.HEAD
+                    ],
+                    allowed_origins=["*"],  
+                    allowed_headers=["*"],
+                    exposed_headers=["ETag"]
+                )
+            ]
         )
         
         bucket.add_event_notification(
