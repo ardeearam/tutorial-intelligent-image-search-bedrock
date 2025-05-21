@@ -100,18 +100,20 @@ def get_presigned_upload_url():
   
   timestamp = round(time.time())
   
-  response = s3.generate_presigned_url(
-    'put_object',
-    Params={
-      'Bucket': 'intelligent-image-search-bucket.klaudsol.com', 
-      'Key': f'guest/{timestamp}.png', 
-      'ContentType': 'image/png'
-    },
-    ExpiresIn=3600,
-    HttpMethod='PUT'
+  
+  presigned_post = s3.generate_presigned_post(
+    Bucket='intelligent-image-search-bucket.klaudsol.com',
+    Key=f'guest/{timestamp}.png',
+    Fields={"Content-Type": 'image/png'},
+    Conditions=[
+        {"Content-Type": 'image/png'},
+    ],
+    ExpiresIn=300  # 5 minutes
   )
   
-  return response
+  print(presigned_post)
+    
+  return presigned_post
 
 
 def home(request):
@@ -119,13 +121,20 @@ def home(request):
     
     images = Image.objects.all()
     presigned_urls = {image.s3_file_path: generate_presigned_url(image.s3_file_path) for image in images}
-    presigned_upload_url = get_presigned_upload_url()
-    print(presigned_upload_url)
+    presigned_upload_url_hash = get_presigned_upload_url()
+    print(presigned_upload_url_hash)
+    
+    sts = boto3.client('sts')
+    identity = sts.get_caller_identity()
+    print("Running as:")
+    print(identity)
+    
     return render(request, 'app/index.html', 
     {
       'images': images, 
       'presigned_urls': presigned_urls, 
-      'presigned_upload_url': presigned_upload_url
+      'presigned_upload_url': presigned_upload_url_hash['url'],
+      'presigned_upload_fields': presigned_upload_url_hash['fields']
     })
   
   elif request.method == 'POST':

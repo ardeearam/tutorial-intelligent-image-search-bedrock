@@ -51,8 +51,12 @@
           <div class="card-body">
             <h4 class="card-title">Upload your own image (PNG format only, not less than 5MB)</h4>
             <p class="card-text">
-              <form method="POST" action="{{ upload_url }}" enctype="multipart/form-data" id="upload-form">
+              <form id="upload-form" >
                 {% csrf_token %}
+
+                {% for key, value in presigned_upload_fields.items %}
+                  <input type="hidden" class="upload-hidden" name="{{key}}" value="{{value}}" />
+                {% endfor %}
 
                 <div class="row mt-2 mb-2">
 
@@ -109,17 +113,27 @@
         if (!file) return alert("Choose a file first");
 
 
+        const formData = new FormData();
+        const elements = document.getElementsByClassName('upload-hidden');
+        Array.from(elements).forEach(el => {
+          var key = el.name;
+          var value = el.value;
+          console.log( key + " " + value);
+          formData.append(key, value);
+        });
+
+        formData.append("file", file);
+
         const upload = await fetch("{{presigned_upload_url}}", {
-          method: "PUT",
-          headers: {
-            "Content-Type": 'image/png',
-          },
-          body: file,
+          method: "POST",
+          body: formData,
         });
 
         if (upload.ok) {
           alert("Upload successful!");
         } else {
+          const errorText = await upload.text();
+          console.error('Upload failed:', upload.status, errorText);
           alert("Upload failed.");
         }
       });

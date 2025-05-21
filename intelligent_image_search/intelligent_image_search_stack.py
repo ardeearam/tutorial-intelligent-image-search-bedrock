@@ -7,6 +7,7 @@ from aws_cdk import (
     aws_lambda as _lambda,
     aws_iam as iam,
 )
+from aws_cdk.aws_s3 import BlockPublicAccess
 from constructs import Construct
 from dotenv import dotenv_values
 
@@ -16,6 +17,8 @@ class IntelligentImageSearchStack(Stack):
         super().__init__(scope, construct_id, **kwargs)
         
         env_vars = dotenv_values(".env") 
+        
+        print(env_vars)
         
         my_lambda = _lambda.Function(
           self, "OnUploadLambdaFunction",
@@ -34,7 +37,7 @@ class IntelligentImageSearchStack(Stack):
             self, 
             "IntelligentImageSearchBucket",
             versioned=True,
-            bucket_name="intelligent-image-search-bucket.klaudsol.com",
+            bucket_name=env_vars['S3_BUCKET_NAME'],
             cors=[
                 s3.CorsRule(
                     allowed_methods=[
@@ -47,7 +50,13 @@ class IntelligentImageSearchStack(Stack):
                     allowed_headers=["*"],
                     exposed_headers=["ETag"]
                 )
-            ]
+            ],
+            block_public_access=BlockPublicAccess(
+                block_public_acls=False,
+                ignore_public_acls=True,
+                block_public_policy=True,
+                restrict_public_buckets=True
+            )
         )
         
         bucket.add_event_notification(
@@ -58,4 +67,6 @@ class IntelligentImageSearchStack(Stack):
 
         bucket.grant_read(my_lambda)
         bucket.grant_write(my_lambda)
+        
+        # 
         
