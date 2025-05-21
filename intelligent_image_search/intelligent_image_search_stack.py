@@ -41,22 +41,14 @@ class IntelligentImageSearchStack(Stack):
             cors=[
                 s3.CorsRule(
                     allowed_methods=[
-                        s3.HttpMethods.GET,
-                        s3.HttpMethods.PUT,
                         s3.HttpMethods.POST,
-                        s3.HttpMethods.HEAD
                     ],
                     allowed_origins=["*"],  
                     allowed_headers=["*"],
                     exposed_headers=["ETag"]
                 )
             ],
-            block_public_access=BlockPublicAccess(
-                block_public_acls=False,
-                ignore_public_acls=True,
-                block_public_policy=True,
-                restrict_public_buckets=True
-            )
+            block_public_access=s3.BlockPublicAccess.BLOCK_ALL
         )
         
         bucket.add_event_notification(
